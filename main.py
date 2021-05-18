@@ -335,8 +335,8 @@ class App:
         self.sun_num = 50  # number of sunlight collected
         self.wave_number = 0
         self.time = 0  # start from 0s
-        self.win = False
         self.self_pro_sun_counter = 300  # 15 sec
+        self.lose = False
 
         self.selected_box = None  # box to show selection
         self.hover_box = None
@@ -356,6 +356,11 @@ class App:
     def update(self):
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
+
+        if self.lose:
+            if pyxel.btnp(pyxel.KEY_R):
+                self.__init__()
+            return
 
         if pyxel.frame_count % 20 == 0 and pyxel.frame_count != 0:
             self.time += 1  # update game time
@@ -424,6 +429,9 @@ class App:
 
             # update zombies and plants
             for zom in self.lines[line]["zombies"]:
+                if zom.is_alive and zom.x <= 0:
+                    self.lose = True
+                    break
                 if zom.should_pop:
                     self.lines[line]["zombies"].pop(self.lines[line]["zombies"].index(zom))
                     continue
@@ -466,10 +474,17 @@ class App:
                             self.sun_list.append(pla.get_skill())
         self.mouse_reaction()
         self.next_wave()
-        self.win = self.check_win()
 
     def draw(self):
+        if self.lose:
+            pyxel.blt(55, 17, 2, 0, 0, 80, 80, 7)
+            pyxel.mouse(False)
+            s = "Press R to restart"
+            pyxel.text(60, 100, s, 0)
+            return
+
         pyxel.bltm(0, 0, 0, 0, 0, 112, 152)
+
         if self.selected_box is not None:
             pyxel.blt(*self.selected_box)
         if self.hover_box is not None:
@@ -574,7 +589,7 @@ class App:
     def next_wave(self):
         if pyxel.frame_count % 600 == 0 and 0 < self.time <= 300:  # 20s
             normal_zombie_num = int(self.time / 20)
-            if self.time in [30, 120, 180, 240, 300]:
+            if self.time != 0 and (self.time == 30 or self.time % 60 == 0):
                 self.random_zombies("FlagZombies", 1)
                 self.random_zombies("NormalZombies", normal_zombie_num - 1)
             else:
@@ -584,13 +599,7 @@ class App:
                 self.random_zombies("BucketHeadZombies", normal_zombie_num - 3)
                 self.random_zombies("ScreenDoorZombies", normal_zombie_num - 4)
 
-    def check_win(self):  # TODO: 胜利界面，失败判断，开始界面
-        if self.time <= 300:
-            return False
-        for i in range(6):
-            if self.lines[i]["zombies"] != []:
-                return False
-        return True
-
 
 App()
+
+# TODO: CD
