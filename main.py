@@ -1,12 +1,8 @@
 import pyxel
 from random import randint
 from random import choice
-from math import sqrt
 
-
-######################
-### Zombies' class ###
-######################
+# Zombies' class
 zombie_source_map = {"NormalZombies": (1, 0, 0, 16, 16, 0),  # [img, u, v, w, h, [colkey]]
                      "FlagZombies": (1, 0, 80, 16, 16, 0),
                      "ConeHeadZombies": (1, 0, 16, 16, 16, 0),
@@ -109,9 +105,7 @@ class Zombies:
         pyxel.blt(self.x, self.y, *self.source)
 
 
-#####################
-### Plants' class ###
-#####################
+# Plants' class
 plant_source_map = {"Peashooter": (0, 16, 16, 16, 16, 13),  # [img, u, v, w, h, [colkey]]
                     "SunFlower": (0, 16, 32, 16, 16, 13),
                     "CherryBomb": (0, 16, 48, 16, 16, 13),
@@ -136,25 +130,31 @@ plant_reset_counter_map = {"Peashooter": 30,  # frames
                            "WallNut": None,
                            "SnowPea": 30,
                            "Chomper": None}
-plant_cost_map = {"Peashooter": 100,  # sun_light
-                  "SunFlower": 50,
-                  "CherryBomb": 150,
-                  "WallNut": 50,
-                  "SnowPea": 175,
-                  "Chomper": 150}
+plant_cost_cd_map = {"Peashooter": (100, 100),  # (cost, cd)
+                     "SunFlower": (50, 100),  # 5 sec
+                     "CherryBomb": (150, 300),  # 20 sec
+                     "WallNut": (50, 200),  # 10 sec
+                     "SnowPea": (175, 140),  # 7 sec
+                     "Chomper": (150, 140)}
+plant_card_map = {"Peashooter": (0, 16, 112, 16, 16),  # [img, u, v, w, h]
+                  "SunFlower": (0, 16, 128, 16, 16),
+                  "CherryBomb": (0, 16, 144, 16, 16),
+                  "WallNut": (0, 16, 160, 16, 16),
+                  "SnowPea": (0, 16, 176, 16, 16),
+                  "Chomper": (0, 16, 192, 16, 16)}
 
 
 class EdiblePlants:
-    def __init__(self, type, x, y):
-        if type == "WallNut":
-            self.health = 3000
+    def __init__(self, typ, x, y):
+        if typ == "WallNut":
+            self.health = 4000
         else:
             self.health = 60
         self.x = x
         self.y = y
-        self.type = type
-        self.source = [x, y, *plant_source_map[type]]
-        self.damage = plant_damage_map[type]
+        self.type = typ
+        self.source = [x, y, *plant_source_map[typ]]
+        self.damage = plant_damage_map[typ]
         self.is_alive = True
 
         self.do_skill_signal = False
@@ -214,7 +214,7 @@ class EdiblePlants:
     def get_hurt(self, damage):
         self.health -= damage
         if self.type == "WallNut":
-            if self.health < 3000 / 2:
+            if self.health < 4000 / 2:
                 self.source = [self.x, self.y, *[0, 32, 64, 16, 16, 13]]
         if self.health <= 0:
             self.is_alive = False
@@ -262,6 +262,7 @@ class CherryBomb:
         self.bla_counter -= 1
 
 
+# tools' class
 class Bullet:
     def __init__(self, x, y, type):
         self.x = x
@@ -342,8 +343,10 @@ class App:
         self.hover_box = None
         self.selected_type = None  # [img, u, v, w, h, [colkey]]
 
+        self.plants_cd = {"Peashooter": [0, True], "SunFlower": [0, True],
+                          "CherryBomb": [0, True], "WallNut": [0, True],
+                          "SnowPea": [0, True], "Chomper": [0, True]}  # [t, ready]
         self.sun_list = []
-
         self.lines = {0: {"car": Car(2 * 8), "plants": {}, "zombies": [], "bullets": [], "bomb": []},
                       1: {"car": Car(4 * 8), "plants": {}, "zombies": [], "bullets": [], "bomb": []},
                       2: {"car": Car(6 * 8), "plants": {}, "zombies": [], "bullets": [], "bomb": []},
@@ -356,7 +359,6 @@ class App:
     def update(self):
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
-
         if self.lose:
             if pyxel.btnp(pyxel.KEY_R):
                 self.__init__()
@@ -364,6 +366,13 @@ class App:
 
         if pyxel.frame_count % 20 == 0 and pyxel.frame_count != 0:
             self.time += 1  # update game time
+
+        for cd in self.plants_cd.values():  # cd counter
+            if not cd[1]:  # not ready
+                if cd[0] > 0:
+                    cd[0] -= 1
+                else:  # cd[0] == 0
+                    cd[1] = True
 
         self.self_producing_sun()
 
@@ -472,6 +481,7 @@ class App:
                             self.lines[line]["bullets"].append(pla.get_skill())  # bullet
                         else:
                             self.sun_list.append(pla.get_skill())
+
         self.mouse_reaction()
         self.next_wave()
 
@@ -484,6 +494,19 @@ class App:
             return
 
         pyxel.bltm(0, 0, 0, 0, 0, 112, 152)
+
+        # draw plants' cards
+        for i, t in enumerate(list(plant_card_map.keys())):
+            img, u, v, w, h = plant_card_map[t]
+            if self.plants_cd[t][1]:
+                pyxel.blt((i + 1) * 16, 0, img, u, v, w, h)
+            else:
+                if 0.666 < self.plants_cd[t][0] / plant_cost_cd_map[t][1] <= 1:
+                    pyxel.blt((i + 1) * 16, 0, img, u + 16, v, w, h)
+                elif 0.333 < self.plants_cd[t][0] / plant_cost_cd_map[t][1] <= 0.666:
+                    pyxel.blt((i + 1) * 16, 0, img, u + 32, v, w, h)
+                else:
+                    pyxel.blt((i + 1) * 16, 0, img, u + 48, v, w, h)
 
         if self.selected_box is not None:
             pyxel.blt(*self.selected_box)
@@ -529,7 +552,9 @@ class App:
         # select a plant
         if x_index in range(1, 8) and y_index in range(0, 1) and pyxel.btnp(pyxel.MOUSE_LEFT_BUTTON):
             self.selected_box = [x_index * 16, y_index * 16, 0, 80, 16, 16, 16, 0]  # [x, y, img, u, v, w, h, [colkey]]
-            if not (x_index in range(7, 8) and y_index in range(0, 1)):
+            if not (x_index in range(7, 8) and y_index in range(0, 1)) \
+                    and self.plants_cd[plant_selection_map[x_index]][1] \
+                    and self.sun_num - plant_cost_cd_map[plant_selection_map[x_index]][0] >= 0:
                 self.selected_type = plant_selection_map[x_index]
             else:
                 self.selected_type = None
@@ -537,13 +562,15 @@ class App:
         # plant or remove a plant
         if pyxel.btnp(pyxel.MOUSE_LEFT_BUTTON) and x_index in range(2, 11) and y_index in range(1, 7):
             if self.selected_type is not None and (x_index - 2) not in self.lines[y_index - 1]["plants"].keys()\
-                    and self.sun_num - plant_cost_map[self.selected_type] >= 0:
+                    and self.sun_num - plant_cost_cd_map[self.selected_type][0] >= 0:
                 if self.selected_type == "CherryBomb":
                     self.lines[y_index - 1]["bomb"].append(CherryBomb(x_index * 16, y_index * 16))
                 else:
                     self.lines[y_index - 1]["plants"][x_index - 2] = EdiblePlants(self.selected_type,
                                                                                   x_index * 16, y_index * 16)
-                self.sun_num -= plant_cost_map[self.selected_type]
+                self.sun_num -= plant_cost_cd_map[self.selected_type][0]
+                self.plants_cd[self.selected_type][0] = plant_cost_cd_map[self.selected_type][1]
+                self.plants_cd[self.selected_type][1] = False  # set cd
                 self.selected_box = self.selected_type = self.hover_box = None
             else:
                 if self.selected_box is not None and self.selected_box[0] == 7 * 16:  # shovel selected
@@ -587,9 +614,9 @@ class App:
             )
 
     def next_wave(self):
-        if pyxel.frame_count % 600 == 0 and 0 < self.time <= 300:  # 20s
-            normal_zombie_num = int(self.time / 20)
-            if self.time != 0 and (self.time == 30 or self.time % 60 == 0):
+        if pyxel.frame_count % 600 == 0 and self.time != 0:  # new wave every 30s
+            normal_zombie_num = int(self.time / 30) if self.time <= 450 else 15  # reach max number after 7.5 min
+            if self.time != 0 and (self.time == 30 or self.time % 60 == 0):    # just to prevent having too many zombies
                 self.random_zombies("FlagZombies", 1)
                 self.random_zombies("NormalZombies", normal_zombie_num - 1)
             else:
@@ -600,6 +627,5 @@ class App:
                 self.random_zombies("ScreenDoorZombies", normal_zombie_num - 4)
 
 
-App()
-
-# TODO: CD
+if __name__ == "__main__":
+    App()

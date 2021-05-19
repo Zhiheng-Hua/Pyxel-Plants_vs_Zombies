@@ -4,7 +4,17 @@
 
 <img src="demo1.jpg" height="50%" width="50%">
 <img src="demo2.jpg" height="50%" width="50%">
+<img src="demo3.jpg" height="50%" width="50%">
 
-90% complete
+## Win / Lost
+- zombies will keep coming every 30 seconds, defend as long as possible!
+- Lost if zombies get into your house
+
+## Control
+- mouse
+- 'q' or 'esc' to terminate
+
+## Installation
+clone this repo and run main.py
 
 ###### Use [Pyxel](https://github.com/kitao/pyxel) as game engine
