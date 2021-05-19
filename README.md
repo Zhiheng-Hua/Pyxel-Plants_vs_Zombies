@@ -15,6 +15,7 @@
 - `q` or `esc` to terminate
 
 ## Installation
-clone this repo and run main.py
+- clone this repo and run main.py
+- note that you also need to install [Pyxel](https://github.com/kitao/pyxel)
 
 ###### Use [Pyxel](https://github.com/kitao/pyxel) as game engine
