@@ -12,7 +12,7 @@
 
 ## Control
 - mouse
-- 'q' or 'esc' to terminate
+- `q` or `esc` to terminate
 
 ## Installation
 clone this repo and run main.py
