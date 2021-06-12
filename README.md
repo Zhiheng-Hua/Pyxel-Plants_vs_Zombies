@@ -2,9 +2,9 @@
 
 [Pyxel](https://github.com/kitao/pyxel) version of the classic game: "Plants vs Zombies".
 
-<img src="icon.jpg" height="50%" width="50%">
-<img src="demo1.jpg" height="50%" width="50%">
-<img src="demo2.jpg" height="50%" width="50%">
+<img src="icon.jpg" height="40%" width="40%">
+<img src="demo1.gif" height="50%" width="50%">
+<img src="demo2.gif" height="50%" width="50%">
 <img src="demo3.jpg" height="50%" width="50%">
 <img src="demo4.jpg" height="50%" width="50%">
 <img src="demo5.jpg" height="50%" width="50%">
